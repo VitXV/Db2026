@@ -72,10 +72,10 @@ comment on column logs.user_id is 'Идентификатор пользоват
 comment on column logs.par_id is 'Идентификатор параметров';
 comment on column logs.time_unix is 'Время проведения измерений (формат unix)';
 
-insert into users (user_id, firstname, lastname, rank_id) values (1, 'Адамов','Александр',1);
-insert into users (user_id, firstname, lastname, rank_id) values (2, 'Баренцев','Борис',2);
-insert into users (user_id, firstname, lastname, rank_id) values (3, 'Володин','Владимир',3);
-insert into users (user_id, firstname, lastname, rank_id) values (4, 'Горный','Геннадий',3);
+insert into users (user_id, firstname, lastname, rank_id) values (1, 'Александр','Адамов',1);
+insert into users (user_id, firstname, lastname, rank_id) values (2, 'Борис','Баренцев',2);
+insert into users (user_id, firstname, lastname, rank_id) values (3, 'Владимир','Володин',3);
+insert into users (user_id, firstname, lastname, rank_id) values (4, 'Геннадий','Горный',3);
 
 insert into ranks (rank_id, rank_name) values (1,'Лейтенант');
 insert into ranks (rank_id, rank_name) values (2,'Сержант');
