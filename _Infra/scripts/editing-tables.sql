@@ -118,7 +118,7 @@ insert into parameters (log_id, eq_id, type_id, unit_id, val) values (3, 2, 6, 1
 -- Мне кажется, я понял что за пачки имелись в виду.
 -- Я теперь таблицу параметры использую как пачки.
 
-select parameters.log_id, date_time, firstname, lastname, rank_name, eq_name, type_name, val, short_name
+select date_time, parameters.log_id, firstname, lastname, rank_name, eq_name, type_name, val, short_name
 from logs, users, ranks, parameters, types_of_equipment, types_of_parameters, units
 where
 logs.user_id = users.user_id and
