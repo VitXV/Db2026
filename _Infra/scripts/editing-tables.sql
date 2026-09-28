@@ -1,8 +1,6 @@
 drop table if exists types_of_parameters;
 drop table if exists units;
 
--- Немного своеобразно получилось.
-
 -- Не вижу смысла создавать ещё одну таблицу с базовыми единицами измерения, если можно хранить их в таблице со всеми типами ед. изм.
 -- Ограничивать минимальное и максимальное значения тоже неправильно. Ведь в других единицах измерения оно может быть вполне себе допустимым
 
@@ -59,62 +57,61 @@ insert into units (unit_id, unit_name, short_name) values (16, 'Километр
 insert into units (unit_id, unit_name, short_name) values (17, 'Футы в секунду', 'фт/с');
 insert into units (unit_id, unit_name, short_name) values (18, 'Мили в час', 'мл/ч');
 
--- Refactoring...
-delete from parameters;
-delete from logs;
+alter table parameters add column if not exists log_id integer;
+alter table parameters add column if not exists type_id integer;
+alter table parameters add column if not exists unit_id integer;
+alter table parameters add column if not exists val numeric;
+
+alter table logs add column if not exists date_time timestamp;
+
+alter table parameters alter column par_id drop not null;
+alter table parameters alter column height drop not null;
+alter table parameters alter column temperature drop not null;
+alter table parameters alter column preasure drop not null;
+alter table parameters alter column wind_dir drop not null;
+alter table parameters alter column wind_speed drop not null;
+
+update logs set date_time = to_timestamp(time_unix);
+
+update parameters set log_id = logs.log_id from logs where parameters.par_id = logs.par_id;
+
+update parameters set type_id = 1, unit_id = 1, val = height;
+
+insert into parameters (log_id, eq_id, type_id, unit_id, val)
+select log_id, eq_id, 2, 6, temperature from parameters where type_id = 1;
+
+insert into parameters (log_id, eq_id, type_id, unit_id, val)
+select log_id, eq_id, 3, 9, preasure from parameters where type_id = 1;
+
+insert into parameters (log_id, eq_id, type_id, unit_id, val)
+select log_id, eq_id, 4, 13, wind_dir from parameters where type_id = 1;
+
+insert into parameters (log_id, eq_id, type_id, unit_id, val)
+select log_id, eq_id, 5, 15, wind_speed from parameters where type_id = 1;
 
 alter table parameters drop column if exists height;
 alter table parameters drop column if exists temperature;
 alter table parameters drop column if exists preasure;
 alter table parameters drop column if exists wind_dir;
 alter table parameters drop column if exists wind_speed;
+alter table parameters drop column if exists par_id;
 
 alter table logs drop column if exists par_id;
-alter table parameters add column if not exists log_id integer;
-
 alter table logs drop column if exists time_unix;
-alter table logs add column if not exists date_time timestamp;
 
-alter table parameters add column if not exists type_id integer not null;
-alter table parameters add column if not exists unit_id integer not null;
-alter table parameters add column if not exists val numeric not null;
+alter table parameters alter column log_id set not null;
+alter table parameters alter column type_id set not null;
+alter table parameters alter column unit_id set not null;
+alter table parameters alter column val set not null;
+
+update types_of_equipment set eq_name = 'ДМК' where eq_id = 1;
+update types_of_equipment set eq_name = 'ВР' where eq_id = 2;
 
 comment on column logs.date_time is 'Время проведения измерений';
 comment on column parameters.log_id is 'Идентификатор лога';
 comment on column parameters.type_id is 'Идентификатор типа параметров';
 comment on column parameters.unit_id is 'Идентификатор единиц измерения';
 comment on column parameters.val is 'Значение';
-
-insert into logs (log_id, user_id, date_time) values (1, 2, timestamp '2026-09-27 12:00:00');
-insert into logs (log_id, user_id, date_time) values (2, 4, timestamp '2026-09-27 13:00:00');
-insert into logs (log_id, user_id, date_time) values (3, 3, timestamp '2026-09-27 14:30:00');
-
-update types_of_equipment set eq_name = 'ДМК' where eq_id = 1;
-update types_of_equipment set eq_name = 'ВР' where eq_id = 2;
-
-alter table parameters drop column if exists par_id;
-
-insert into parameters (log_id, eq_id, type_id, unit_id, val) values (1, 1, 1, 1, 540);
-insert into parameters (log_id, eq_id, type_id, unit_id, val) values (1, 1, 2, 6, 16);
-insert into parameters (log_id, eq_id, type_id, unit_id, val) values (1, 1, 3, 9, 720);
-insert into parameters (log_id, eq_id, type_id, unit_id, val) values (1, 1, 4, 13, 16);
-insert into parameters (log_id, eq_id, type_id, unit_id, val) values (1, 1, 5, 15, 5);
-
-insert into parameters (log_id, eq_id, type_id, unit_id, val) values (2, 1, 1, 1, 140);
-insert into parameters (log_id, eq_id, type_id, unit_id, val) values (2, 1, 2, 6, 22);
-insert into parameters (log_id, eq_id, type_id, unit_id, val) values (2, 1, 3, 9, 765);
-insert into parameters (log_id, eq_id, type_id, unit_id, val) values (2, 1, 4, 13, 0);
-insert into parameters (log_id, eq_id, type_id, unit_id, val) values (2, 1, 5, 15, 2);
-
-insert into parameters (log_id, eq_id, type_id, unit_id, val) values (3, 2, 1, 3, 1.2);
-insert into parameters (log_id, eq_id, type_id, unit_id, val) values (3, 2, 2, 6, 8);
-insert into parameters (log_id, eq_id, type_id, unit_id, val) values (3, 2, 3, 9, 720);
-insert into parameters (log_id, eq_id, type_id, unit_id, val) values (3, 2, 4, 13, 45);
-insert into parameters (log_id, eq_id, type_id, unit_id, val) values (3, 2, 5, 15, 12);
-insert into parameters (log_id, eq_id, type_id, unit_id, val) values (3, 2, 6, 15, 10);
-
--- Мне кажется, я понял что за пачки имелись в виду.
--- Я теперь таблицу параметры использую как пачки.
 
 select date_time, parameters.log_id, firstname, lastname, rank_name, eq_name, type_name, val, short_name
 from logs, users, ranks, parameters, types_of_equipment, types_of_parameters, units
