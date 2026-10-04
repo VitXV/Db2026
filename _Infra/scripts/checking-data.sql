@@ -16,12 +16,12 @@ where p.log_id is null;
 -- 3
 -- В моём случае 6 измерений, есть ещё дальность сноса пуль
 
-SELECT l.log_id
-FROM logs l 
-WHERE (
-    SELECT COUNT(*)
-    FROM parameters p
-    WHERE p.log_id = l.log_id
+select l.log_id
+from logs l 
+where (
+    select count(*)
+    from parameters p
+    where p.log_id = l.log_id
 ) != 6;
 
 -- проверка
@@ -50,6 +50,15 @@ WHERE
     (p.type_id = 4 AND (p.val < 0 OR p.val > 59)) OR
     (p.type_id = 5 AND (p.val < 0 OR p.val > 15)) OR
     (p.type_id = 6 AND (p.val < 0 OR p.val > 150));
+
+-- доп. проверка на единицы измерения
+select * from parameters p where
+p.type_id = 2 and p.unit_id != 6 or
+p.type_id = 3 and p.unit_id != 9 or
+p.type_id = 4 and p.unit_id != 13 or
+p.type_id = 5 and p.unit_id != 15 or
+p.type_id = 6 and p.unit_id != 1;
+-- других единиц кроме стандарных нет
 
 -- 5
 
