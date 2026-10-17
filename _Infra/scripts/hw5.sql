@@ -20,7 +20,7 @@ do $$
 		drop sequence if exists seq_logs cascade;
 		drop sequence if exists seq_parameters cascade;
 		drop sequence if exists seq_temperature cascade;
-		
+	end;	
 	commit;
 	
 	-- Создание таблиц с нуля
@@ -141,7 +141,8 @@ do $$
 		comment on column temperature.name is 'Название формулы';
 		comment on column temperature.coof is 'Коофицент перевода';
 		comment on column temperature.corr is 'Добавление';
-		
+
+	end;
 	commit;
 	
 	-- Заполнить таблицы
@@ -231,7 +232,8 @@ do $$
 		(4, 'Кельвин в Цельсий', 1.0/1.0, -273.15),
 		(5, 'Фаренгейт в Кельвин', 5.0/9.0, 255.3722),
 		(6, 'Кельвин в Фаренгейт', 1.8, -459.67);
-		
+
+	end;
 	commit;
 	
 	
@@ -261,7 +263,8 @@ do $$
 		alter table parameters 
 		    add constraint fk_params_unit 
 		    foreign key (unit_id) references units(id);
-		
+
+	end;
 	commit;
 
 end $$;
