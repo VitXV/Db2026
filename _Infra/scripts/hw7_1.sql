@@ -29,6 +29,22 @@ do $$
 	(5, 0, 15, true, false, 'скорость ветра, м/с (только дмк)'),
 	(6, 0, 150, false, true, 'дальность сноса пуль, м (только вр)')
 	on conflict (type_id) do nothing;
+
+	-- таблица для хранения текстов ошибок (настроечная)
+	create table if not exists error_messages (
+	    error_code text primary key,
+	    error_text text not null
+	);
+	
+	comment on table error_messages is 'настроечная таблица текстов ошибок валидации';
+
+	insert into error_messages (error_code, error_text) values
+	('invalid_equipment',     'неверный тип оборудования: '),
+	('param_not_specified',   ' не указана'),
+	('param_out_of_range',    ' вне диапазона ['),
+	('param_not_used_dmk',    ' не используется для ДМК'),
+	('param_not_used_vr',     ' не используется для ВР')
+	on conflict (error_code) do nothing;
 	
 	drop type if exists parameter_pack cascade;
 	create type parameter_pack as (
@@ -41,76 +57,71 @@ do $$
 	    bullet_drift numeric       -- дальность сноса пуль
 	);
 	
-	-- функция для проверки корректности параметров
+	-- функция проверки корректности параметров
 	create or replace function validate_parameter_pack(pack parameter_pack)
 	returns text
-	language plpgsql
+	language sql
 	as $func$
-	declare
-	    errors text := '';
-	    eq_upper text;
-	    lim record;
-	    param_val numeric;
-	    param_name text;
-	begin
-	    eq_upper := upper(pack.equipment_code);
-	
-	    if eq_upper not in ('ДМК', 'ВР') then
-	        errors := errors || 'неверный тип оборудования: ' || pack.equipment_code || '; ';
-	    end if;
-	
-	    for lim in 
-	        select pl.*, pt.name 
+	    with 
+	    param_values as (
+	        select 
+	            pl.type_id,
+	            pl.min_val,
+	            pl.max_val,
+	            pl.is_required_for_dmk,
+	            pl.is_required_for_vr,
+	            pt.name as param_name,
+	            case pl.type_id
+	                when 1 then pack.height
+	                when 2 then pack.temperature
+	                when 3 then pack.pressure
+	                when 4 then pack.wind_dir
+	                when 5 then pack.wind_speed
+	                when 6 then pack.bullet_drift
+	            end as param_val
 	        from param_limits pl
 	        join par_types pt on pl.type_id = pt.id
-	        order by pl.type_id
-	    loop
-	        case lim.type_id
-	            when 1 then 
-	                param_val := pack.height;
-	                param_name := 'высота';
-	            when 2 then 
-	                param_val := pack.temperature;
-	                param_name := 'температура';
-	            when 3 then 
-	                param_val := pack.pressure;
-	                param_name := 'давление';
-	            when 4 then 
-	                param_val := pack.wind_dir;
-	                param_name := 'направление ветра';
-	            when 5 then 
-	                param_val := pack.wind_speed;
-	                param_name := 'скорость ветра';
-	            when 6 then 
-	                param_val := pack.bullet_drift;
-	                param_name := 'дальность сноса пуль';
-	        end case;
-	
-	        -- проверка обязательности для типа оборудования
-	        if eq_upper = 'ДМК' and lim.is_required_for_dmk = false then
-	            if param_val is not null then
-	                errors := errors || param_name || ' не используется для ДМК; ';
-	            end if;
-	        elsif eq_upper = 'ВР' and lim.is_required_for_vr = false then
-	            if param_val is not null then
-	                errors := errors || param_name || ' не используется для вр; ';
-	            end if;
-	        else
-	            -- параметр используется, проверяем наличие и границы
-	            if param_val is null then
-	                errors := errors || param_name || ' не указана; ';
-	            elsif param_val < lim.min_val or param_val > lim.max_val then
-	                errors := errors || param_name || ' вне диапазона [' || lim.min_val || ', ' || lim.max_val || ']: ' || param_val || '; ';
-	            end if;
-	        end if;
-	    end loop;
-	
-	    if errors <> '' then
-	        errors := rtrim(errors, '; ');
-	    end if;
-	
-	    return errors;
-	end;
+	    ),
+	    errors as (
+	        -- проверка типа оборудования
+	        select 
+	            0 as ord,
+	            (select error_text from error_messages where error_code = 'invalid_equipment')
+	            || pack.equipment_code as msg
+	        where upper(pack.equipment_code) not in ('ДМК', 'ВР')
+	        
+	        union all
+	        
+	        -- проверки по каждому параметру
+	        select 
+	            pv.type_id as ord,
+	            case
+	                -- параметр не используется для данного типа оборудования, но передан
+	                when upper(pack.equipment_code) = 'ДМК' 
+	                     and not pv.is_required_for_dmk 
+	                     and pv.param_val is not null
+	                then pv.param_name || (select error_text from error_messages where error_code = 'param_not_used_dmk')
+	                
+	                when upper(pack.equipment_code) = 'ВР' 
+	                     and not pv.is_required_for_vr 
+	                     and pv.param_val is not null
+	                then pv.param_name || (select error_text from error_messages where error_code = 'param_not_used_vr')
+	                
+	                -- параметр не указан
+	                when pv.param_val is null
+	                then pv.param_name || (select error_text from error_messages where error_code = 'param_not_specified')
+	                
+	                -- параметр вне диапазона
+	                when pv.param_val < pv.min_val or pv.param_val > pv.max_val
+	                then pv.param_name 
+	                     || (select error_text from error_messages where error_code = 'param_out_of_range')
+	                     || pv.min_val || ', ' || pv.max_val || ']: ' || pv.param_val::text
+	            end as msg
+	        from param_values pv
+	    )
+	    select coalesce(string_agg(msg, '; ' order by ord), '')
+	    from errors
+	    where msg is not null;
 	$func$;
 
 end $$;
