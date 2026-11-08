@@ -6,8 +6,8 @@ begin
 	begin
 		
 		-- Таблица стандартных высот
-		create sequence calc_correction_height_seq;
-		create table calc_correction_heights
+		create sequence if not exists calc_correction_height_seq;
+		create table if not exists calc_correction_heights
 		(
 		        id integer primary key not null default nextval('public.calc_correction_height_seq'),
 		        height integer not null
@@ -22,8 +22,8 @@ begin
 		comment on column calc_correction_heights.height is 'Высота';
 	
 		-- Справочник типов таблиц корректировок
-		create sequence calc_correction_types_seq;
-		create table calc_correction_types
+		create sequence if not exists calc_correction_types_seq;
+		create table if not exists calc_correction_types
 		(
 		        id integer not null primary key default nextval('public.calc_correction_types_seq'),
 		        parent_id integer,
@@ -40,8 +40,8 @@ begin
 		comment on column calc_correction_types.header_values is 'Значения в заголовке таблице';
 
 		-- Универсальная таблица корректировок
-		create sequence calc_correction_seq;
-		create table calc_correction
+		create sequence if not exists calc_correction_seq;
+		create table if not exists calc_correction
 		(
 		        id integer not null primary key default nextval('public.calc_correction_seq'),
 		        height_id integer not null,
@@ -59,10 +59,8 @@ begin
 
 	-- Добавляем данные
 	begin
-
-		
 		insert into calc_correction_types(  description, header_values)
-		values( 'Таблица 2', array[0, 1, 2, 3, 4, 5, 6, 7, 8, 8, 10, 20, 30, 40, 50]),  -- 1
+		values( 'Таблица 2', array[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50]),  -- 1
 		( 'Таблица 3, скорость среднего ветра', null), -- 2
 		( 'Таблица 3, направление среднего ветра', null);       -- 3
 
@@ -115,11 +113,7 @@ begin
 	end;
 
 	-- Прочее
-	begin
-		-- Наименование подправлю
-		alter table public.calc_temperature_correction rename to calc_correction_temperature;
-		
-				
+	begin	
 		CREATE OR REPLACE FUNCTION public.fn_calc_temperature_interpolation(
 			par_temperature numeric)
 		    RETURNS numeric
@@ -128,7 +122,7 @@ begin
 		    VOLATILE PARALLEL UNSAFE
 		AS $BODY$
 				        declare 
-				                var_interpolation interpolation_type;
+				                var_interpolation interpolation_points;
 				                var_result numeric(8,2) default 0;
 				                var_min_temparure numeric(8,2) default 0;
 				                var_max_temperature numeric(8,2) default 0;
@@ -138,20 +132,20 @@ begin
 				                                raise notice 'Расчет интерполяции для температуры %', par_temperature;
 				
 				                -- Проверим, возможно температура совпадает со значением в справочнике
-				                if exists (select 1 from public.calc_correction_temperature where temperature = par_temperature ) then
+				                if exists (select 1 from public.temperature where t0_val = par_temperature ) then
 				                begin
-				                        select correction 
+				                        select correction_value 
 				                        into  var_result 
-				                        from  public.calc_correction_temperature
+				                        from  public.temperature
 				                        where 
-				                                temperature = par_temperature;
+				                                t0_val = par_temperature;
 				                end;
 				                else    
 				                begin
 				                        -- Получим диапазон в котором работают поправки
-				                        select min(temperature), max(temperature) 
+				                        select min(t0_val), max(t0_val) 
 				                        into var_min_temparure, var_max_temperature
-				                        from public.calc_correction_temperature;
+				                        from public.temperature;
 				
 				                        if par_temperature < var_min_temparure or   
 				                           par_temperature > var_max_temperature then
@@ -166,23 +160,23 @@ begin
 				                                                 into var_interpolation.x0, var_interpolation.y0, var_interpolation.x1, var_interpolation.y1
 				                        from
 				                        (
-				                                select t1.temperature as x0, t1.correction as y0
-				                                from public.calc_correction_temperature as t1
-				                                where t1.temperature <= par_temperature
-				                                order by t1.temperature desc
+				                                select t1.t0_val as x0, t1.correction_value as y0
+				                                from public.temperature as t1
+				                                where t1.t0_val <= par_temperature
+				                                order by t1.t0_val desc
 				                                limit 1
 				                        ) as leftPart
 				                        cross join
 				                        (
-				                                select t1.temperature as x1, t1.correction as y1
-				                                from public.calc_correction_temperature as t1
-				                                where t1.temperature >= par_temperature
-				                                order by t1.temperature 
+				                                select t1.t0_val as x1, t1.correction_value as y1
+				                                from public.temperature as t1
+				                                where t1.t0_val >= par_temperature
+				                                order by t1.t0_val 
 				                                limit 1
 				                        ) as rightPart;
 				
 				                        raise notice 'Граничные значения %', var_interpolation;
-				                        var_result :=  fn_calc_interpolation( par_temperature,  var_interpolation);
+				                        var_result :=  interpolate( par_temperature,  var_interpolation);
 				                                                 
 				                end;
 				                end if;
@@ -193,9 +187,6 @@ begin
 				
 		$BODY$;
 		
-		ALTER FUNCTION public.fn_calc_temperature_interpolation(numeric)
-		    OWNER TO admin;
-		
 		COMMENT ON FUNCTION public.fn_calc_temperature_interpolation(numeric)
 		    IS 'Функция для расчета интерполяции для метео приближенный';
 	end;
@@ -203,4 +194,3 @@ begin
 	commit;
 	
 end $$;
-	
