@@ -1,4 +1,4 @@
--- очистка дубликатов, если предыдущицй скрипт запускался дважды
+-- очистка дубликатов, если предыдущий скрипт запускался дважды
 delete from calc_correction_heights
 where id not in (select min(id) from calc_correction_heights group by height);
 
@@ -7,7 +7,7 @@ delete from calc_correction_types where id > 9;
 delete from calc_correction
 where id not in (select min(id) from calc_correction group by height_id, type_id);
 
--- добавляю конастанты в уже существующую таблицу
+-- добавляю константы в уже существующую таблицу
 
 insert into algorithm_constants (const_key, const_value, description)
 values
