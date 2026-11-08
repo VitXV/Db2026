@@ -1,3 +1,12 @@
+-- очистка дубликатов, если предыдущицй скрипт запускался дважды
+delete from calc_correction_heights
+where id not in (select min(id) from calc_correction_heights group by height);
+
+delete from calc_correction_types where id > 9;
+
+delete from calc_correction
+where id not in (select min(id) from calc_correction group by height_id, type_id);
+
 -- добавляю конастанты в уже существующую таблицу
 
 insert into algorithm_constants (const_key, const_value, description)
@@ -127,10 +136,3 @@ begin
     comment on procedure public.calculate_meteo_bulletin_proc(public.lst_parameter[], integer)
         is 'Расчёт метеобюллетеня: H, TT, HH, CC по всем высотам из таблицы';
 end $$;
-
--- Вызов процедуры
-call public.calculate_meteo_bulletin_proc(
-    array[(1, 2, 23.0)::lst_parameter, (1, 3, 757.0)::lst_parameter, (1, 4, 15.0)::lst_parameter, (1, 5, 6.0)::lst_parameter, (1, 6, 0.0)::lst_parameter],
-    1 -- 1 = ДМК, 2 = ВР
-);
-select * from tmp_bulletin order by h;
