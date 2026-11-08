@@ -18,10 +18,13 @@ begin
 		set type_id = 9
 		where type_id = 8 and row_values[1] < 0;
 
-		update calc_correction
-		set row_values = array[-1, -2, -3, -4, -5, -6, -6, -7, -8, -9, -19, -29, -38, -48]
-		where height_id = 2 and type_id = 9;
+		-- отрицательные температуры для всех высот
+		update calc_correction set row_values = array[-1, -2, -3, -4, -5, -6, -7, -8, -8, -9, -20, -29, -39, -49] where height_id = 1 and type_id = 9;
+		update calc_correction set row_values = array[-1, -2, -3, -4, -5, -6, -6, -7, -8, -9, -19, -29, -38, -48] where height_id = 2 and type_id = 9;
+		update calc_correction set row_values = array[-1, -2, -3, -4, -5, -6, -6, -7, -7, -8, -18, -28, -37, -46] where height_id = 3 and type_id = 9;
+		update calc_correction set row_values = array[-1, -2, -3, -4, -4, -5, -5, -6, -7, -8, -17, -26, -35, -44] where height_id = 4 and type_id = 9;
 
+		-- положительные температуры
 		update calc_correction
 		set row_values = array[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, NULL, NULL]
 		where type_id = 8;
