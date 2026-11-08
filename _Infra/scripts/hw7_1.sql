@@ -1,4 +1,5 @@
 do $$
+begin
 	alter table parameters add column if not exists is_valid boolean default true;
 	alter table parameters add column if not exists error_description text;
 	

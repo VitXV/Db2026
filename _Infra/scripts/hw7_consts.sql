@@ -1,4 +1,5 @@
 do $$
+begin
 	-- таблица для хранения констант алгоритма
 	create table if not exists algorithm_constants (
 	    const_key text primary key,

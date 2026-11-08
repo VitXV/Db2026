@@ -1,7 +1,8 @@
 do $$
+begin
 	
 	-- Удалить ошмётки предыдущих таблиц
-	begin;
+	begin
 		
 		drop table if exists users cascade;
 		drop table if exists ranks cascade;
@@ -21,10 +22,9 @@ do $$
 		drop sequence if exists seq_parameters cascade;
 		drop sequence if exists seq_temperature cascade;
 	end;	
-	commit;
 	
 	-- Создание таблиц с нуля
-	begin;
+	begin
 	
 		create table users (
 		id integer not null primary key,
@@ -143,10 +143,9 @@ do $$
 		comment on column temperature.corr is 'Добавление';
 
 	end;
-	commit;
 	
 	-- Заполнить таблицы
-	begin;
+	begin
 	
 		insert into ranks (id, name) values 
 		(1, 'Лейтенант'),
@@ -234,11 +233,10 @@ do $$
 		(6, 'Кельвин в Фаренгейт', 1.8, -459.67);
 
 	end;
-	commit;
 	
 	
 	-- Создание связей
-	begin;
+	begin
 		
 		alter table users 
 		    add constraint fk_users_rank 
@@ -265,6 +263,5 @@ do $$
 		    foreign key (unit_id) references units(id);
 
 	end;
-	commit;
 
 end $$;

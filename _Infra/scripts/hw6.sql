@@ -1,5 +1,6 @@
 do $$
-	begin;
+begin
+	begin
 	    -- Преобразование таблицы temperature
 	    alter table temperature drop column if exists name;
 	    alter table temperature drop column if exists coof;
@@ -84,5 +85,5 @@ do $$
 	        end if;
 	    end;
 	    $func$;
-	commit;
+	end;
 end $$;

@@ -1,5 +1,5 @@
 do $$
-	
+begin
 	-- ддччм - день, часы, десятки минут из даты измерения
 	create or replace function calc_ddchchm(dt timestamptz)
 	returns text
