@@ -1,1 +1,4 @@
 _Infra/pgadmin
+_Infra/backup
+_Infra/mssql-data
+_Infra/postgres-data
