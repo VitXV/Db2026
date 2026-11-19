@@ -1,11 +1,11 @@
-create database db2026;
+--create database db2026;
 
-create SEQUENCE seq_dim_ranges;
+create SEQUENCE if not exists seq_dim_ranges;
 
---select * from dim_ranges
+--select * from dim_ranges;
 
 -- Ресурсы еди ницы изхмерения
-create table dim_ranges
+create table if not exists dim_ranges
 (
       --- Внутрений код
     id bigint primary key DEFAULT nextval('public.seq_dim_ranges'),
@@ -16,8 +16,8 @@ create table dim_ranges
     date_add timestamp default now()
 );
 
-select * from dim_ranges
-delete from dim_ranges
+select * from dim_ranges;
+delete from dim_ranges;
 
 
 insert into dim_ranges(external_id, name, factor ) values (1,'порция',1.000);
