@@ -22,12 +22,11 @@ begin
  	create table if not exists products(
  		id int primary key default nextval('seq_products'),
  		external_id int,
- 		-- product_id int, -- убрал, это и есть перенос 1=1
  		name text,
  		vendor_id int,
  		category_id int,
  		size_id int,
- 		is_used int, -- поправил isuse на is_used
+ 		is_used int,
  		date_add timestamp default now()
  	);
  	comment on table products is 'Продукты';
@@ -59,10 +58,9 @@ begin
  	create table if not exists vendors (
  		id int primary key default nextval('seq_vendors'),
  		external_id int,
- 		-- vendor_id text, -- убрал, это и есть перенос 1=1
  		vendor_group int,
  		name text,
- 		is_used int, -- поправил isuse на is_used
+ 		is_used int,
  		date_add timestamp default now()
  	);
  	comment on table vendors is 'Поставщики';
@@ -75,7 +73,7 @@ begin
 
  	-- storages
  	create sequence if not exists seq_storages;
- 	create table if not exists storages ( -- добавил if not exists
+ 	create table if not exists storages (
  		id int primary key default nextval('seq_storages'),
  		external_id int,
  		name text,
@@ -83,13 +81,13 @@ begin
  	);
  	comment on table storages is 'Склады';
  	comment on column storages.id is 'Идентификатор';
- 	comment on column storages.external_id is 'Внешний id'; -- поправил idddd
+ 	comment on column storages.external_id is 'Внешний id';
  	comment on column storages.name is 'Название';
  	comment on column storages.date_add is 'Дата добавления';
 
  	-- employees
  	create sequence if not exists seq_employees;
- 	create table if not exists employees ( -- добавил if not exists
+ 	create table if not exists employees (
  		id int primary key default nextval('seq_employees'),
  		external_id int,
  		firstname text,
@@ -161,7 +159,7 @@ begin
  		external_id int,
  		parent_id int,
  		description text,
- 		is_used int, -- поправил isuse на is_used
+ 		is_used int,
  		date_add timestamp default now()
  	);
  	comment on table debit_reason is 'Причины списания';
